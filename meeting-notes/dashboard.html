@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Construction Projects — Weekly Meeting Notes</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #333; }
+        .header { background: #1a1a2e; color: #fff; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 1.4rem; }
+        .header .date { font-size: 0.95rem; opacity: 0.8; }
+        .container { max-width: 1000px; margin: 20px auto; padding: 0 20px; }
+        .section { background: #fff; border-radius: 10px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .section h2 { font-size: 1.1rem; color: #1a1a2e; margin-bottom: 16px; border-bottom: 2px solid #e0e0e0; padding-bottom: 8px; }
+        label { display: block; font-weight: 600; margin-bottom: 4px; font-size: 0.9rem; color: #555; }
+        input, textarea, select { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; font-family: inherit; margin-bottom: 12px; }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: #4a6cf7; box-shadow: 0 0 0 3px rgba(74,108,247,0.1); }
+        textarea { resize: vertical; min-height: 80px; }
+        .row { display: flex; gap: 12px; }
+        .row > div { flex: 1; }
+        .project-card { border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin-bottom: 16px; position: relative; }
+        .project-card .remove-btn { position: absolute; top: 10px; right: 10px; background: #ff4757; color: #fff; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 1rem; }
+        .project-card .remove-btn:hover { background: #e0313f; }
+        .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95rem; font-weight: 600; }
+        .btn-primary { background: #4a6cf7; color: #fff; }
+        .btn-primary:hover { background: #3a5ce5; }
+        .btn-success { background: #2ed573; color: #fff; }
+        .btn-success:hover { background: #26b862; }
+        .btn-secondary { background: #e0e0e0; color: #333; }
+        .btn-secondary:hover { background: #d0d0d0; }
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+        .action-item { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+        .action-item input[type="text"] { margin-bottom: 0; }
+        .action-item .owner { max-width: 150px; }
+        .action-item .due { max-width: 140px; }
+        .action-item .remove-action { background: none; border: none; color: #ff4757; cursor: pointer; font-size: 1.2rem; padding: 4px; width: auto; }
+        .status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; color: #fff; }
+        .status-on-track { background: #2ed573; }
+        .status-delayed { background: #ffa502; }
+        .status-at-risk { background: #ff4757; }
+        .output-area { background: #1a1a2e; color: #a8e6cf; padding: 20px; border-radius: 8px; font-family: monospace; font-size: 0.85rem; white-space: pre-wrap; max-height: 500px; overflow-y: auto; display: none; margin-top: 16px; }
+        .toast { position: fixed; bottom: 20px; right: 20px; background: #2ed573; color: #fff; padding: 14px 24px; border-radius: 8px; font-weight: 600; display: none; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .progress-bar { height: 6px; background: #e0e0e0; border-radius: 3px; margin-bottom: 12px; }
+        .progress-bar .fill { height: 100%; border-radius: 3px; background: #4a6cf7; transition: width 0.3s; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Construction Projects — Weekly Meeting Notes</h1>
+    <div class="date" id="currentDate"></div>
+</div>
+
+<div class="container">
+    <!-- Meeting Info -->
+    <div class="section">
+        <h2>Meeting Info</h2>
+        <div class="row">
+            <div>
+                <label>Date</label>
+                <input type="date" id="meetingDate">
+            </div>
+            <div>
+                <label>Attendees (comma-separated)</label>
+                <input type="text" id="attendees" placeholder="e.g. Ahmed, John, Sarah">
+            </div>
+        </div>
+    </div>
+
+    <!-- Projects -->
+    <div class="section">
+        <h2>Project Updates</h2>
+        <div id="projectsContainer"></div>
+        <button class="btn btn-primary" onclick="addProject()">+ Add Project</button>
+    </div>
+
+    <!-- General Discussion -->
+    <div class="section">
+        <h2>General Discussion</h2>
+        <textarea id="generalDiscussion" rows="4" placeholder="Any general topics discussed..."></textarea>
+    </div>
+
+    <!-- Next Meeting -->
+    <div class="section">
+        <h2>Next Meeting</h2>
+        <div class="row">
+            <div>
+                <label>Date</label>
+                <input type="date" id="nextMeetingDate">
+            </div>
+            <div>
+                <label>Agenda Items for Next Week</label>
+                <input type="text" id="nextAgenda" placeholder="Topics to cover next week">
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="section">
+        <h2>Export</h2>
+        <div class="btn-group">
+            <button class="btn btn-success" onclick="generateMarkdown()">Generate Markdown</button>
+            <button class="btn btn-primary" onclick="downloadMarkdown()">Download .md File</button>
+            <button class="btn btn-secondary" onclick="copyToClipboard()">Copy to Clipboard</button>
+            <button class="btn btn-secondary" onclick="clearAll()">Clear All</button>
+        </div>
+        <div class="output-area" id="outputArea"></div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    let projectCount = 0;
+
+    // Set today's date
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    document.getElementById('meetingDate').value = today;
+
+    // Load saved data on page load
+    window.addEventListener('load', () => {
+        const saved = localStorage.getItem('meetingNotesDraft');
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                if (data.date === today) {
+                    document.getElementById('attendees').value = data.attendees || '';
+                    document.getElementById('generalDiscussion').value = data.general || '';
+                    if (data.projects) {
+                        data.projects.forEach(p => addProject(p));
+                    }
+                } else {
+                    addProject();
+                }
+            } catch (e) {
+                addProject();
+            }
+        } else {
+            addProject();
+        }
+    });
+
+    // Auto-save draft
+    setInterval(() => {
+        const projects = [];
+        document.querySelectorAll('.project-card').forEach(card => {
+            projects.push({
+                name: card.querySelector('.proj-name')?.value || '',
+                country: card.querySelector('.proj-country')?.value || '',
+                status: card.querySelector('.proj-status')?.value || '',
+                phase: card.querySelector('.proj-phase')?.value || '',
+                percent: card.querySelector('.proj-percent')?.value || '',
+                mainPoints: card.querySelector('.proj-points')?.value || '',
+                issues: card.querySelector('.proj-issues')?.value || '',
+            });
+        });
+        localStorage.setItem('meetingNotesDraft', JSON.stringify({
+            date: today,
+            attendees: document.getElementById('attendees').value,
+            general: document.getElementById('generalDiscussion').value,
+            projects
+        }));
+    }, 5000);
+
+    function addProject(data = {}) {
+        projectCount++;
+        const container = document.getElementById('projectsContainer');
+        const card = document.createElement('div');
+        card.className = 'project-card';
+        card.innerHTML = `
+            <button class="remove-btn" onclick="this.parentElement.remove()" title="Remove project">&times;</button>
+            <div class="row">
+                <div>
+                    <label>Project Name</label>
+                    <input type="text" class="proj-name" placeholder="e.g. Riyadh Tower" value="${data.name || ''}">
+                </div>
+                <div>
+                    <label>Country</label>
+                    <input type="text" class="proj-country" placeholder="e.g. Saudi Arabia" value="${data.country || ''}">
+                </div>
+            </div>
+            <div class="row">
+                <div>
+                    <label>Status</label>
+                    <select class="proj-status">
+                        <option value="On Track" ${data.status === 'On Track' ? 'selected' : ''}>On Track</option>
+                        <option value="Delayed" ${data.status === 'Delayed' ? 'selected' : ''}>Delayed</option>
+                        <option value="At Risk" ${data.status === 'At Risk' ? 'selected' : ''}>At Risk</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Phase</label>
+                    <select class="proj-phase">
+                        <option value="Design" ${data.phase === 'Design' ? 'selected' : ''}>Design</option>
+                        <option value="Procurement" ${data.phase === 'Procurement' ? 'selected' : ''}>Procurement</option>
+                        <option value="Construction" ${data.phase === 'Construction' ? 'selected' : ''}>Construction</option>
+                        <option value="Handover" ${data.phase === 'Handover' ? 'selected' : ''}>Handover</option>
+                    </select>
+                </div>
+                <div>
+                    <label>% Complete</label>
+                    <input type="number" class="proj-percent" min="0" max="100" placeholder="0-100" value="${data.percent || ''}">
+                    <div class="progress-bar"><div class="fill" style="width: ${data.percent || 0}%"></div></div>
+                </div>
+            </div>
+            <label>Main Points</label>
+            <textarea class="proj-points" rows="3" placeholder="Key updates discussed...">${data.mainPoints || ''}</textarea>
+            <label>Issues / Risks</label>
+            <textarea class="proj-issues" rows="2" placeholder="Any blockers or risks...">${data.issues || ''}</textarea>
+            <label>Action Items</label>
+            <div class="actions-list"></div>
+            <button class="btn btn-secondary" onclick="addActionItem(this)" style="margin-top: 4px; font-size: 0.85rem; padding: 6px 12px;">+ Action Item</button>
+        `;
+        container.appendChild(card);
+
+        // Update progress bar on input
+        const percentInput = card.querySelector('.proj-percent');
+        const fill = card.querySelector('.fill');
+        percentInput.addEventListener('input', () => {
+            fill.style.width = (percentInput.value || 0) + '%';
+        });
+    }
+
+    function addActionItem(btn) {
+        const list = btn.previousElementSibling;
+        const item = document.createElement('div');
+        item.className = 'action-item';
+        item.innerHTML = `
+            <input type="text" placeholder="Task description" class="action-task">
+            <input type="text" placeholder="Owner" class="action-owner owner">
+            <input type="date" class="action-due due">
+            <button class="remove-action" onclick="this.parentElement.remove()">&times;</button>
+        `;
+        list.appendChild(item);
+    }
+
+    function generateMarkdown() {
+        const date = document.getElementById('meetingDate').value;
+        const attendees = document.getElementById('attendees').value;
+        const general = document.getElementById('generalDiscussion').value;
+        const nextDate = document.getElementById('nextMeetingDate').value;
+        const nextAgenda = document.getElementById('nextAgenda').value;
+
+        let md = `# Weekly Meeting Notes - ${date}\n\n`;
+        md += `## Attendees\n`;
+        attendees.split(',').forEach(a => { if (a.trim()) md += `- ${a.trim()}\n`; });
+        md += `\n---\n\n## Project Updates\n`;
+
+        document.querySelectorAll('.project-card').forEach(card => {
+            const name = card.querySelector('.proj-name').value || 'Unnamed Project';
+            const country = card.querySelector('.proj-country').value || 'TBD';
+            const status = card.querySelector('.proj-status').value;
+            const phase = card.querySelector('.proj-phase').value;
+            const percent = card.querySelector('.proj-percent').value || '0';
+            const points = card.querySelector('.proj-points').value;
+            const issues = card.querySelector('.proj-issues').value;
+
+            md += `\n### ${name} — ${country}\n`;
+            md += `- **Status:** ${status}\n`;
+            md += `- **Phase:** ${phase}\n`;
+            md += `- **% Complete:** ${percent}%\n`;
+            md += `- **Main Points:**\n`;
+            points.split('\n').forEach(p => { if (p.trim()) md += `  - ${p.trim()}\n`; });
+            if (!points.trim()) md += `  -\n`;
+            md += `- **Issues / Risks:**\n`;
+            issues.split('\n').forEach(i => { if (i.trim()) md += `  - ${i.trim()}\n`; });
+            if (!issues.trim()) md += `  -\n`;
+
+            const actions = card.querySelectorAll('.action-item');
+            if (actions.length > 0) {
+                md += `- **Action Items:**\n`;
+                actions.forEach(a => {
+                    const task = a.querySelector('.action-task').value;
+                    const owner = a.querySelector('.action-owner').value;
+                    const due = a.querySelector('.action-due').value;
+                    if (task) md += `  - [ ] ${task}${owner ? ' — ' + owner : ''}${due ? ' — ' + due : ''}\n`;
+                });
+            }
+            md += `\n---\n`;
+        });
+
+        md += `\n## General Discussion\n`;
+        if (general.trim()) {
+            general.split('\n').forEach(g => { if (g.trim()) md += `- ${g.trim()}\n`; });
+        } else {
+            md += `-\n`;
+        }
+
+        md += `\n## Next Meeting\n`;
+        md += `- **Date:** ${nextDate || 'TBD'}\n`;
+        md += `- **Agenda Items for Next Week:**\n`;
+        if (nextAgenda.trim()) {
+            nextAgenda.split(',').forEach(a => { if (a.trim()) md += `  - ${a.trim()}\n`; });
+        } else {
+            md += `  -\n`;
+        }
+
+        const output = document.getElementById('outputArea');
+        output.textContent = md;
+        output.style.display = 'block';
+        showToast('Markdown generated!');
+        return md;
+    }
+
+    function downloadMarkdown() {
+        const md = generateMarkdown();
+        const date = document.getElementById('meetingDate').value;
+        const blob = new Blob([md], { type: 'text/markdown' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${date}-weekly-meeting.md`;
+        a.click();
+        showToast('File downloaded!');
+    }
+
+    function copyToClipboard() {
+        const md = generateMarkdown();
+        navigator.clipboard.writeText(md);
+        showToast('Copied to clipboard!');
+    }
+
+    function clearAll() {
+        if (!confirm('Clear all fields?')) return;
+        document.getElementById('attendees').value = '';
+        document.getElementById('generalDiscussion').value = '';
+        document.getElementById('nextMeetingDate').value = '';
+        document.getElementById('nextAgenda').value = '';
+        document.getElementById('projectsContainer').innerHTML = '';
+        document.getElementById('outputArea').style.display = 'none';
+        localStorage.removeItem('meetingNotesDraft');
+        addProject();
+        showToast('Cleared!');
+    }
+
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.style.display = 'block';
+        setTimeout(() => { toast.style.display = 'none'; }, 2500);
+    }
+</script>
+
+</body>
+</html>
